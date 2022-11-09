@@ -36,14 +36,15 @@ def encoder_layer(dff, d_model, num_heads, dropout, name="encoder_layer"):
     # 이번 일에서는 패딩이 존재X -> 패딩마스크X
 
     # 멀티-헤드 어텐션 (첫번째 서브층 / 셀프 어텐션)
-    attention = tf.keras.layers.MultiHeadAttention(num_heads, d_model, name="multi_head_attention")(
+    assert d_model%num_heads==0,  f'It is in {name}'
+    d_model_each_head = int(d_model/num_heads)
+    attention = tf.keras.layers.MultiHeadAttention(num_heads, d_model_each_head, name="multi_head_attention")(
         query = inputs, value = inputs, #key = inputs
     )
 
     # 드롭아웃 + 잔차 연결과 층 정규화
     attention = tf.keras.layers.Dropout(rate=dropout)(attention)
-    attention = tf.math.add(inputs,attention)
-    attention = tf.keras.layers.LayerNormalization(epsilon=1e-6)(attention)
+    attention = tf.keras.layers.LayerNormalization(epsilon=1e-6)(inputs+attention)
 
     # 포지션 와이즈 피드 포워드 신경망 (두번째 서브층)
     outputs = tf.keras.layers.Dense(units=dff, activation='relu')(attention)
@@ -51,8 +52,7 @@ def encoder_layer(dff, d_model, num_heads, dropout, name="encoder_layer"):
 
     # 드롭아웃 + 잔차 연결과 층 정규화
     outputs = tf.keras.layers.Dropout(rate=dropout)(outputs)
-    outputs = tf.math.add(attention, outputs)
-    outputs = tf.keras.layers.LayerNormalization(epsilon=1e-6)(outputs)
+    outputs = tf.keras.layers.LayerNormalization(epsilon=1e-6)(attention+outputs)
 
     return tf.keras.Model(inputs=[inputs], outputs=outputs, name=name)
 
@@ -98,24 +98,24 @@ def decoder_layer(dff, d_model, num_heads, dropout, name="decoder_layer"):
     # 패딩 마스크X
 
     # 멀티-헤드 어텐션 (첫번째 서브층 / 마스크드 셀프 어텐션)
-    attention1 = tf.keras.layers.MultiHeadAttention(num_heads, d_model, name="multi_head_attention_1")(
+    assert d_model%num_heads==0, f'It is in {name}'
+    d_model_each_head = int(d_model/num_heads)
+    attention1 = tf.keras.layers.MultiHeadAttention(num_heads, d_model_each_head, name="multi_head_attention_1")(
         query = inputs, value = inputs, attention_mask = look_ahead_mask, #key = inputs
     )
 
 
     # 잔차 연결과 층 정규화
-    attention1 = tf.math.add(attention1, inputs)
-    attention1 = tf.keras.layers.LayerNormalization(epsilon=1e-6)(attention1)
+    attention1 = tf.keras.layers.LayerNormalization(epsilon=1e-6)(attention1+inputs)
 
     # 멀티-헤드 어텐션 (두번째 서브층 / 디코더-인코더 어텐션)
-    attention2 = tf.keras.layers.MultiHeadAttention(num_heads, d_model, name="multi_head_attention_2")(
+    attention2 = tf.keras.layers.MultiHeadAttention(num_heads, d_model_each_head, name="multi_head_attention_2")(
         query = attention1, value = enc_outputs, #key = enc_outputs
     )
 
     # 드롭아웃 + 잔차 연결과 층 정규화
     attention2 = tf.keras.layers.Dropout(rate=dropout)(attention2)
-    attention2 = tf.math.add(attention2, attention1)
-    attention2 = tf.keras.layers.LayerNormalization(epsilon=1e-6)(attention2)
+    attention2 = tf.keras.layers.LayerNormalization(epsilon=1e-6)(attention2+attention1)
 
     # 포지션 와이즈 피드 포워드 신경망 (세번째 서브층)
     outputs = tf.keras.layers.Dense(units=dff, activation='relu')(attention2)
@@ -123,8 +123,7 @@ def decoder_layer(dff, d_model, num_heads, dropout, name="decoder_layer"):
 
     # 드롭아웃 + 잔차 연결과 층 정규화
     outputs = tf.keras.layers.Dropout(rate=dropout)(outputs)
-    outputs = tf.math.add(outputs, attention2)
-    outputs = tf.keras.layers.LayerNormalization(epsilon=1e-6)(outputs)
+    outputs = tf.keras.layers.LayerNormalization(epsilon=1e-6)(outputs+attention2)
 
     return tf.keras.Model(
         inputs=[inputs, enc_outputs, look_ahead_mask],

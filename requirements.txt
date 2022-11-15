@@ -91,6 +91,7 @@ pure-eval==0.2.2
 pyasn1==0.4.8
 pyasn1-modules==0.2.8
 pycparser==2.21
+pydot==1.4.2
 Pygments==2.13.0
 pyparsing @ file:///opt/conda/conda-bld/pyparsing_1661452539315/work
 pyrsistent==0.19.2

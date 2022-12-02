@@ -72,6 +72,10 @@ notebook==6.5.2
 notebook_shim==0.2.2
 numexpr @ file:///opt/conda/conda-bld/numexpr_1656940300424/work
 numpy==1.23.4
+nvidia-cublas-cu11==11.10.3.66
+nvidia-cuda-nvrtc-cu11==11.7.99
+nvidia-cuda-runtime-cu11==11.7.99
+nvidia-cudnn-cu11==8.5.0.96
 oauthlib==3.2.2
 opt-einsum==3.3.0
 packaging @ file:///tmp/build/80754af9/packaging_1637314298585/work
@@ -128,6 +132,9 @@ threadpoolctl==3.1.0
 tinycss2==1.2.1
 tokenizers==0.13.2
 tomli==2.0.1
+torch==1.13.0
+torchaudio==0.13.0
+torchvision==0.14.0
 tornado==6.2
 tqdm==4.64.1
 traitlets==5.5.0
